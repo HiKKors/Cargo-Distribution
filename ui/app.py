@@ -9,9 +9,9 @@ def main(page: ft.Page):
     page.title = "Axle Load MVP"
     page.scroll = ft.ScrollMode.AUTO
     page.theme_mode = ft.ThemeMode.LIGHT
-    
+
     page.appbar = ft.AppBar(
-        title=ft.Text("Расчет нагрузки по осям", color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
+        title=ft.Text("Расчёт нагрузки по осям", color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
         bgcolor=ft.Colors.BLUE_800,
     )
 
@@ -21,42 +21,52 @@ def main(page: ft.Page):
     visualizer_container = ft.Container(margin=ft.Margin(top=20, left=0, right=0, bottom=0))
 
     def on_state_change():
-        cargos = cargo_source.get_cargos()
+        cargos  = cargo_source.get_cargos()
         unplaced = any(c.position is None for c in cargos)
-        
+
         if unplaced and len(cargos) > 0:
             result = None
         else:
             try:
                 result = calculate_loads(state['truck'], cargos)
             except Exception as e:
-                snack = ft.SnackBar(content=ft.Text(f'Ошибка расчета: {str(e)}'), bgcolor=ft.Colors.RED)
+                snack = ft.SnackBar(content=ft.Text(f'Ошибка расчёта: {e}'), bgcolor=ft.Colors.RED)
                 page.overlay.append(snack)
                 snack.open = True
                 page.update()
                 result = None
 
-        update_visualization(visualizer_container, state['truck'], cargos, result)
+        # Передаём актуальную ширину страницы — для корректного масштаба на Android
+        update_visualization(
+            visualizer_container,
+            state['truck'],
+            cargos,
+            result,
+            page_width=page.width or 400,
+        )
         page.update()
 
-    truck_card = create_truck_card(state['truck'])
-    cargo_form = CargoForm(state, cargo_source, on_state_change)
+    # Перерисовываем схему при изменении размеров окна / повороте экрана
+    page.on_resized = lambda _: on_state_change()
+
+    truck_card  = create_truck_card(state['truck'])
+    cargo_form  = CargoForm(state, cargo_source, on_state_change)
 
     page.add(
         ft.ResponsiveRow([
             ft.Column([truck_card], col={"sm": 12, "md": 6}),
-            ft.Column([cargo_form], col={"sm": 12, "md": 6})
+            ft.Column([cargo_form], col={"sm": 12, "md": 6}),
         ]),
         ft.Card(
             content=ft.Container(
                 padding=15,
                 content=ft.Column([
                     ft.Text("Схема распределения", size=20, weight=ft.FontWeight.BOLD),
-                    visualizer_container
-                ])
+                    visualizer_container,
+                ]),
             )
-        )
+        ),
     )
-    
-    # Первичный рендер заглушки
+
+    # Первичный рендер
     on_state_change()
