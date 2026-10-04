@@ -118,6 +118,7 @@ def find_safe_placement(
     truck: Truck,
     cargos: List[Cargo],
     step: float = 0.1,
+    strategy: str = 'balance'
 ) -> Optional[List[Cargo]]:
     """
     Ищет безопасное 2D-размещение грузов в кузове.
@@ -134,6 +135,9 @@ def find_safe_placement(
     """
     if not cargos:
         return []
+    
+    if strategy == 'lifo':
+        return _lifo_placement(truck, cargos, step)
 
     # Проверка: каждый груз должен физически вписываться в кузов
     for c in cargos:
@@ -200,3 +204,49 @@ def find_safe_placement(
 
     return best_cargos
 
+def _lifo_placement(truck: Truck, cargos: List[Cargo], step: float=0.1):
+    
+    if not cargos:
+        return []
+    
+    
+    for c in cargos:
+        if c.width > truck.body_width:
+            return None
+        if c.height > truck.body_height:
+            return None
+        
+    shelves = _pack_into_shelves(tuple(cargos), truck.body_width)
+    
+    #суммарная длина полок по X
+    total_length = sum(max(c.length for c in shelf) for shelf in shelves)
+    
+    if total_length > truck.body_length:
+        return None
+    
+    # начальная позиция - передняя стенка кузова
+    x_start = truck.body_start_offset
+    max_x_start = truck.body_start_offset + truck.body_length - total_length
+    
+    while x_start < max_x_start + 0.001:
+        # получаем координаты грузов
+        test_cargos = _assign_positions(shelves, x_start, truck.body_width)
+        calc_result = calculate_loads(truck, test_cargos)
+        
+        is_safe = True
+        if calc_result.critical_error or calc_result.is_total_overloaded:
+            is_safe = False
+        else:
+            for ax in calc_result.axle_results:
+                if ax.is_overloaded or ax.is_lifted:
+                    is_safe = False
+                    break
+                
+        if is_safe:
+            return test_cargos
+        else:
+            x_start += step
+        
+    return None
+        
+        
