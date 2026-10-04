@@ -1,2 +1,2 @@
 # Cargo-Distribution
-Pet-project for cargo distribution 
+commerce project for cargo distribution 
