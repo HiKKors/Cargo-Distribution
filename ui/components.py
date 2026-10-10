@@ -43,6 +43,8 @@ class CargoForm(ft.Card):
         self.state        = state
         self.cargo_source = cargo_source
         self.on_change    = on_change
+        self.strategy = 'balance'
+        self.cargo_counter = 0
 
         self.name_input = ft.TextField(
             label="Название груза",
@@ -91,6 +93,12 @@ class CargoForm(ft.Card):
                 ft.Row([self.width_input, self.height_input], spacing=8),
 
                 ft.Divider(height=8),
+                
+                ft.Switch(
+                    label="Порядок выгрузки соответствует порядку загрузки",
+                    value=False,
+                    on_change=self.switch_strategy
+                ),
 
                 # ── Кнопка авторасстановки ────────────────────────────────
                 ft.FilledButton(
@@ -115,6 +123,12 @@ class CargoForm(ft.Card):
                 self.cargo_list_container,
             ], spacing=10)
         )
+        
+    def switch_strategy(self, e):
+        if self.strategy == 'balance':
+            self.strategy = 'lifo'
+        elif self.strategy == 'lifo':
+            self.strategy = 'balance'
 
     # ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -131,7 +145,9 @@ class CargoForm(ft.Card):
             self.show_snack("Укажите название груза", ft.Colors.ORANGE)
             return
         try:
+            self.cargo_counter += 1
             cargo = Cargo(
+                order_id = self.cargo_counter,
                 name=self.name_input.value,
                 weight=float(self.weight_input.value or 0),
                 length=float(self.length_input.value or 0),
@@ -161,7 +177,7 @@ class CargoForm(ft.Card):
             return
 
         truck = self.state['truck']
-        placed_cargos = find_safe_placement(truck, cargos)
+        placed_cargos = find_safe_placement(truck, cargos, strategy=self.strategy)
 
         if placed_cargos is None:
             self.show_snack("Невозможно безопасно разместить эти грузы", ft.Colors.RED)

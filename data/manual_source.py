@@ -10,6 +10,7 @@ class ManualCargoDataSource(CargoDataSource):
     """
     def __init__(self):
         self._cargos: List[Cargo] = []
+        self._start_order_cargos: List[Cargo] = []
 
     def get_cargos(self) -> List[Cargo]:
         return self._cargos

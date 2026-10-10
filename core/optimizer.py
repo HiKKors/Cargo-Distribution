@@ -205,9 +205,10 @@ def find_safe_placement(
     return best_cargos
 
 def _lifo_placement(truck: Truck, cargos: List[Cargo], step: float=0.1):
-    
     if not cargos:
         return []
+    
+    cargos = sorted(cargos, key=lambda c: c.order_id)
     
     
     for c in cargos:

@@ -39,6 +39,7 @@ class Cargo:
     length: float = 0.0           # длина груза, м (вдоль оси X)
     width: float = 0.0            # ширина груза, м (поперёк, ось Y)
     height: float = 0.0           # высота груза, м (вертикаль, ось Z)
+    order_id: int = 0             # очередность груза
     position: Optional[float] = None           # центр по длине кузова (X), м
     lateral_position: Optional[float] = None   # центр по ширине кузова (Y), м
 
